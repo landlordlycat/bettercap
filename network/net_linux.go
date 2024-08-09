@@ -8,12 +8,28 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bettercap/bettercap/core"
+	"github.com/bettercap/bettercap/v2/core"
 )
 
 // see Windows version to understand why ....
 func getInterfaceName(iface net.Interface) string {
 	return iface.Name
+}
+
+// See https://github.com/bettercap/bettercap/issues/819
+func ForceMonitorMode(iface string) error {
+	_, _ = core.Exec("ip", []string{"link", "set", iface, "down"})
+
+	out, err := core.Exec("iw", []string{"dev", iface, "set", "type", "monitor"})
+	if err != nil {
+		return fmt.Errorf("iw: out=%s err=%s", out, err)
+	} else if out != "" {
+		return fmt.Errorf("Unexpected output while setting interface %s into monitor mode: %s", iface, out)
+	}
+
+	_, _ = core.Exec("ip", []string{"link", "set", iface, "up"})
+
+	return nil
 }
 
 func SetInterfaceChannel(iface string, channel int) error {

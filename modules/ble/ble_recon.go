@@ -1,4 +1,5 @@
-// +build !windows
+//go:build !windows && !freebsd && !openbsd && !netbsd
+// +build !windows,!freebsd,!openbsd,!netbsd
 
 package ble
 
@@ -8,9 +9,9 @@ import (
 	golog "log"
 	"time"
 
-	"github.com/bettercap/bettercap/modules/utils"
-	"github.com/bettercap/bettercap/network"
-	"github.com/bettercap/bettercap/session"
+	"github.com/bettercap/bettercap/v2/modules/utils"
+	"github.com/bettercap/bettercap/v2/network"
+	"github.com/bettercap/bettercap/v2/session"
 
 	"github.com/bettercap/gatt"
 
@@ -166,7 +167,7 @@ func (mod *BLERecon) Configure() (err error) {
 		golog.SetFlags(0)
 		golog.SetOutput(dummyWriter{mod})
 
-		if mod.gattDevice, err = gatt.NewDevice(defaultBLEClientOptions...); err != nil {
+		if mod.gattDevice, err = gatt.NewDevice(getClientOptions(mod.deviceId)...); err != nil {
 			mod.Debug("error while creating new gatt device: %v", err)
 			return err
 		}

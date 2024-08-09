@@ -14,11 +14,11 @@ import (
 
 	"github.com/bettercap/readline"
 
-	"github.com/bettercap/bettercap/caplets"
-	"github.com/bettercap/bettercap/core"
-	"github.com/bettercap/bettercap/firewall"
-	"github.com/bettercap/bettercap/network"
-	"github.com/bettercap/bettercap/packets"
+	"github.com/bettercap/bettercap/v2/caplets"
+	"github.com/bettercap/bettercap/v2/core"
+	"github.com/bettercap/bettercap/v2/firewall"
+	"github.com/bettercap/bettercap/v2/network"
+	"github.com/bettercap/bettercap/v2/packets"
 
 	"github.com/evilsocket/islazy/data"
 	"github.com/evilsocket/islazy/fs"
@@ -30,7 +30,8 @@ import (
 )
 
 const (
-	HistoryFile = "~/bettercap.history"
+	DefaultHistoryFile = "~/bettercap.history"
+	HistoryEnvVar      = "BETTERCAP_HISTORY"
 )
 
 var (
@@ -76,6 +77,7 @@ type Session struct {
 	WiFi      *network.WiFi
 	BLE       *network.BLE
 	HID       *network.HID
+	CAN       *network.CAN
 	Queue     *packets.Queue
 	StartedAt time.Time
 	Active    bool
@@ -124,7 +126,7 @@ func New() (*Session, error) {
 		if err != nil {
 			return nil, err
 		}
-		defer  f.Close()
+		defer f.Close()
 		if err := pprof.StartCPUProfile(f); err != nil {
 			return nil, err
 		}
@@ -271,6 +273,12 @@ func (s *Session) Start() error {
 	}
 
 	s.Firewall = firewall.Make(s.Interface)
+
+	s.CAN = network.NewCAN(s.Aliases, func(dev *network.CANDevice) {
+		s.Events.Add("can.device.new", dev)
+	}, func(dev *network.CANDevice) {
+		s.Events.Add("can.device.lost", dev)
+	})
 
 	s.HID = network.NewHID(s.Aliases, func(dev *network.HIDDevice) {
 		s.Events.Add("hid.device.new", dev)
